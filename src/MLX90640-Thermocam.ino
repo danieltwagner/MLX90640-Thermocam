@@ -44,7 +44,7 @@ TFT_eSPI Display = TFT_eSPI();
 // Added for measure Temp
 boolean measure = true;
 float centerTemp;
-unsigned long tempTime = millis();
+unsigned long tempTime = 0;
 unsigned long tempTime2 = 0;
 
 // start with some initial colors
@@ -94,9 +94,9 @@ void setup() {
   status = MLX90640_ExtractParameters(eeMLX90640, &mlx90640);
   if (status != 0) Serial.println("Parameter extraction failed");
   // Set refresh rate
-  MLX90640_SetRefreshRate(MLX90640_address, 0x05); // Set rate to 8Hz effective - Works at 800kHz
+  MLX90640_SetRefreshRate(MLX90640_address, 4); // Set rate to 4Hz
   // Once EEPROM has been read at 400kHz we can increase
-  Wire.setClock(800000);
+  Wire.setClock(1200000); // 800kHz works fine on esp8266, as does 1.2MHz
 
   // Set up Display.
   Serial.println("Setting up display...");
@@ -123,15 +123,22 @@ void setup() {
   drawLegend();
 }
 
-
+int frames = 0;
 void loop() {
   tempTime = millis();
+  if(tempTime - tempTime2 > 10000) {
+    Serial.print((frames*1000.0)/(tempTime - tempTime2));
+    Serial.println(" fps");
+    tempTime2 = tempTime;
+    frames = 0;
+  }
   
   readTempValues();
   setTempScale();
   drawPicture();
   drawMeasurement();
-  Serial.print(".");
+  frames++;
+  
 }
 
 
