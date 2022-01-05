@@ -48,6 +48,7 @@ unsigned long tempTimeNow = 0;
 unsigned long tempTimeFPS = 0;
 unsigned long tempTimeRead = 0;
 unsigned long tempTimeProcess = 0;
+unsigned long tempTimeDraw = 0;
 
 // start with some initial colors
 float minTemp = 20.0;
@@ -61,6 +62,8 @@ byte red, green, blue;
 float intPoint, val, a, b, c, d, ii;
 int x, y, i, j;
 
+// raw sensor data
+static uint16_t mlx90640Frame[834];
 
 // array for the 32 x 24 measured tempValues
 static float tempValues[32*24];
@@ -140,46 +143,56 @@ void loop() {
   if(tempTimeNow - tempTimeFPS > 10000) {
     Serial.print((frames*1000.0)/(tempTimeNow - tempTimeFPS));
     Serial.print(" fps - ");
-    Serial.print(tempTimeRead);
+    Serial.print(tempTimeRead/frames);
     Serial.print("ms reading, ");
-    Serial.print(tempTimeProcess);
-    Serial.println("ms processing");
+    Serial.print(tempTimeProcess/frames);
+    Serial.print("ms processing, ");
+    Serial.print(tempTimeDraw/frames);
+    Serial.println("ms drawing");
     tempTimeFPS = tempTimeNow;
+    
     frames = 0;
+    tempTimeRead = 0;
+    tempTimeProcess = 0;
+    tempTimeDraw = 0;
+    tempTimeNow = millis();
   }
   
-  readTempValues();
-  tempTimeRead = millis() - tempTimeNow;
-  setTempScale();
+  readFrame();
+  tempTimeRead += millis() - tempTimeNow;
+  tempTimeNow = millis();
+  computeTemps();
+  tempTimeProcess += millis() - tempTimeNow;
+  tempTimeNow = millis();
   drawPicture();
-  drawMeasurement();
-  tempTimeProcess = millis() - tempTimeNow - tempTimeRead;
+  if(frames%2 == 1) {
+    setTempScale();
+    drawMeasurement();
+  }
+  tempTimeDraw += millis() - tempTimeNow;
   frames++;
   
 }
 
 
 // Read pixel data from MLX90640.
-void readTempValues() {
-  for (byte x = 0 ; x < 2 ; x++) // Read both subpages
+void readFrame() {
+  int status = MLX90640_GetFrameData(MLX90640_address, mlx90640Frame);
+  if (status < 0)
   {
-    uint16_t mlx90640Frame[834];
-    int status = MLX90640_GetFrameData(MLX90640_address, mlx90640Frame);
-    if (status < 0)
-    {
-      Serial.print("GetFrame Error: ");
-      Serial.println(status);
-    }
-
-    float vdd = MLX90640_GetVdd(mlx90640Frame, &mlx90640);
-    float Ta = MLX90640_GetTa(mlx90640Frame, &mlx90640);
-
-    float tr = Ta - TA_SHIFT; //Reflected temperature based on the sensor ambient temperature
-
-    MLX90640_CalculateTo(mlx90640Frame, &mlx90640, EMMISIVITY, tr, tempValues);
+    Serial.print("GetFrame Error: ");
+    Serial.println(status);
   }
 }
 
+void computeTemps() {
+  float vdd = MLX90640_GetVdd(mlx90640Frame, &mlx90640);
+  float Ta = MLX90640_GetTa(mlx90640Frame, &mlx90640);
+
+  float tr = Ta - TA_SHIFT; //Reflected temperature based on the sensor ambient temperature
+
+  MLX90640_CalculateTo(mlx90640Frame, &mlx90640, EMMISIVITY, tr, tempValues);
+}
 
 int row;
 float temp, temp2;
@@ -226,8 +239,6 @@ void drawPicture() {
     }
   }
 }
-
-
 
 // Get color for temp value.
 uint16_t getColor(float val) {
