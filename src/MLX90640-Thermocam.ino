@@ -81,6 +81,7 @@ void setup() {
   Wire.beginTransmission((uint8_t)MLX90640_address);
   if (Wire.endTransmission() != 0) {
     Serial.println("MLX90640 not detected at default I2C address. Please check wiring.");
+    for(;;){}
   }
   else {
     Serial.println("MLX90640 online!");
@@ -98,6 +99,7 @@ void setup() {
   Wire.setClock(800000);
 
   // Set up Display.
+  Serial.println("Setting up display...");
   pinMode(TFT_DC, OUTPUT);
   SPI.begin();
   SPI.setFrequency(80000000L);
@@ -129,6 +131,7 @@ void loop() {
   setTempScale();
   drawPicture();
   drawMeasurement();
+  Serial.print(".");
 }
 
 
