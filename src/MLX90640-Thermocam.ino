@@ -228,7 +228,7 @@ void drawPicture(uint16_t pixelMod) {
       ilPattern = pixelNumber / 32 - (pixelNumber / 64) * 2; 
       chessPattern = ilPattern ^ (pixelNumber - (pixelNumber/2)*2); 
       if (chessPattern == pixelMod) {
-        float t = tempValues[(31-x) + (y*32)];
+        float t = tempValues[x + ((23-y)*32)];
         uint8_t colorIndex = (t - minTemp) * degreesPerColor;
         Display.fillRect(8 + x*7, 8 + y*7, 7, 7, camColors[colorIndex]);
       }
