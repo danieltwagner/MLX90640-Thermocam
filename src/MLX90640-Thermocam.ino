@@ -165,7 +165,7 @@ void loop() {
   tempTimeNow = millis();
   
   setTempScale();
-  drawPicture();
+  drawPicture(mlx90640Frame[833]);
   if(frames%2 == 1) {
     drawMeasurement();
     drawLegend();
@@ -217,14 +217,21 @@ const uint16_t camColors[] = {
   0xFFDC,0xFFDD,0xFFDD,0xFFFD,
 };
 
-void drawPicture() {
+void drawPicture(uint16_t pixelMod) {
   float degreesPerColor = 223.0 / (maxTemp - minTemp);
+  int8_t ilPattern;
+  int8_t chessPattern;
+  int pixelNumber;
   for (y=0; y<24; y++) {
     for (x=0; x<32; x++) {
-      float t = tempValues[(31-x) + (y*32)];
-      // uint8_t colorIndex = map(t, minTemp, maxTemp, 0, sizeof(camColors)/sizeof(uint16_t) - 1);
-      uint8_t colorIndex = (t - minTemp) * degreesPerColor;
-      Display.fillRect(8 + x*7, 8 + y*7, 7, 7, camColors[colorIndex]);
+      pixelNumber = y*32 + x;
+      ilPattern = pixelNumber / 32 - (pixelNumber / 64) * 2; 
+      chessPattern = ilPattern ^ (pixelNumber - (pixelNumber/2)*2); 
+      if (chessPattern == pixelMod) {
+        float t = tempValues[(31-x) + (y*32)];
+        uint8_t colorIndex = (t - minTemp) * degreesPerColor;
+        Display.fillRect(8 + x*7, 8 + y*7, 7, 7, camColors[colorIndex]);
+      }
     }
   }
 }
