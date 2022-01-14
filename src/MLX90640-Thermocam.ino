@@ -234,6 +234,12 @@ void drawPicture(uint16_t pixelMod) {
       }
     }
   }
+
+  // draw a box around pixels 15 + 16 (zero-indexed) in lines 11 + 12 (zero-indexed)
+  Display.drawFastHLine(8 + 15*7,     8 + 11*7,     14, TFT_WHITE);
+  Display.drawFastHLine(8 + 15*7,     8 + 13*7 - 1, 14, TFT_WHITE);
+  Display.drawFastVLine(8 + 15*7,     8 + 11*7,     14, TFT_WHITE);
+  Display.drawFastVLine(8 + 17*7 - 1, 8 + 11*7,     14, TFT_WHITE);
 }
 
 void setTempScale() {
@@ -270,9 +276,6 @@ void drawLegend() {
 
 // Draw a circle + measured value.
 void drawMeasurement() {
-
-  // Mark center measurement
-  Display.drawCircle(120, 8+84, 3, TFT_WHITE);
 
   // Measure and print center temperature
   centerTemp = (tempValues[383 - 16] + tempValues[383 - 15] + tempValues[384 + 15] + tempValues[384 + 16]) / 4;
